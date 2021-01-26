@@ -1,0 +1,14 @@
+{
+  "RetryConnection": 3,
+  "DateFormats" : [ "%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%d" ],
+  "URL": {
+    "Debts": "https://my-json-server.typicode.com/druska/trueaccord-mock-payments-api/debts",
+    "PaymentPlans":  "https://my-json-server.typicode.com/druska/trueaccord-mock-payments-api/payment_plans",
+    "Payments": "https://my-json-server.typicode.com/druska/trueaccord-mock-payments-api/payments"
+  },
+  "Tables" : {
+    "PaymentPlans" : {
+      "FrequencyToDays": {"WEEKLY": 7, "BI_WEEKLY": 14}
+    }
+  }
+}
