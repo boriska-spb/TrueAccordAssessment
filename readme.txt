@@ -1,6 +1,8 @@
 Coding Assessment for Boris Ashman
 mobile 646-244-6653
 
+GITHUB REPOSITORY : https://github.com/boriska-spb/TrueAccordAssessment
+
 
 TASKS
 ======
