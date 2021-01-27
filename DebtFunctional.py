@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from functools import reduce
 from APIAccess import APIAccess
 
+
 def addInPaymentPlanFlag(api, debt_data) -> dict:
     """
     Calculate in-payment-plan flag
@@ -59,8 +60,6 @@ def addPaymentPlanExtraInfo(api, debt_data) -> dict:
             raise Exception(f"Invalid payment date : amount={pmt['amount']}, "
                             f"payment_plan_id={pmt['payment_plan_id']}, date={pmt['date']}")
 
-
-
     debt_id = debt_data['id']
     # verify debt amount
     try:
@@ -82,6 +81,22 @@ def addPaymentPlanExtraInfo(api, debt_data) -> dict:
     # --- debt has payment plan
     pp = plans[0]
     ppid = pp['id']
+
+    # payment plan start date
+    pp_start_date = parse_date(pp['start_date'], f"Start date for payment plan id '{ppid}'")
+
+    # installment frequency in days
+    try:
+        frequency = pp['installment_frequency']
+        period = api.cfg["Tables"]["PaymentPlans"]["FrequencyToDays"][frequency]
+    except KeyError:
+        raise Exception(f"Payment plan id '{ppid} : unrecognized frequency '{frequency}'")
+
+    # *** next payment due date : first date in payment schedule after or including today
+    elapsed_days = (datetime.now() - pp_start_date).days
+    periods_to_next_pmt = elapsed_days // period if elapsed_days % period == 0 else elapsed_days // period + 1
+    next_payment_due_date = pp_start_date + timedelta(periods_to_next_pmt*period)
+
     payments = api.fetchPayments(ppid)
 
     # -- no payments yet made
@@ -90,27 +105,19 @@ def addPaymentPlanExtraInfo(api, debt_data) -> dict:
     if len(payments) == 0:
         return {'in_payment_plan': True,
                 'remaining_amount': debt_data['amount'],
-                'next_payment_due_date': parse_date(pp['start_date'], f"Start date for payment plan id '{ppid}'")
+                'next_payment_due_date': next_payment_due_date
                 }
 
     # -- payments made
 
     # *** remaining amount
     remaining_amount = reduce(lambda acc, pmt: acc - payment_amount(pmt), payments, debt_data['amount'])
-
-    # *** next pmt due date: last-pmt-date + payment-frequency-in-days
-    last_pmt_date = parse_date(max(payments, key=lambda pmt: payment_date(pmt))['date'],
-                               f"Last payment date for payment plan id '{ppid}'")
-    try:
-        frequency = pp['installment_frequency']
-        freq2days = api.cfg["Tables"]["PaymentPlans"]["FrequencyToDays"][frequency]
-        next_pmt_date = last_pmt_date + timedelta(days=freq2days)
-    except KeyError:
-        raise Exception(f"Payment plan id '{ppid} : unrecognized frequency '{frequency}'")
+    if remaining_amount == 0:
+        next_payment_due_date = None
 
     return {'in_payment_plan': True,
             'remaining_amount': remaining_amount,
-            'next_payment_due_date': next_pmt_date
+            'next_payment_due_date': next_payment_due_date
             }
 
 
@@ -176,4 +183,4 @@ if __name__ == '__main__':
         raise SystemExit(f"Cannot open config file : {err}")
 
     # print both debt lists as tables
-    runDebtFunctional(cfg, 3, False) #True)
+    runDebtFunctional(cfg, 3, False)  # True)

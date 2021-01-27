@@ -151,36 +151,36 @@ class DebtRecordExtra(DebtRecord):
         # remaining_amount
         # next payment date
         else:
-            plan = rs[0]
-            ppid = plan['id']
-            payments = api.fetchPayments(ppid)
+            pp = rs[0]
+            ppid = pp['id']
+
+            # payment plan start date
+            pp_start_date = parse_date(pp['start_date'], f"Start date for payment plan id '{ppid}'")
+
+            # installment frequency in days
+            try:
+                frequency = pp['installment_frequency']
+                period = api.cfg["Tables"]["PaymentPlans"]["FrequencyToDays"][frequency]
+            except KeyError:
+                raise Exception(f"Payment plan id '{ppid} : unrecognized frequency '{frequency}'")
+
+            # *** next payment due date : first date in payment schedule after or including today
+            elapsed_days = (datetime.now() - pp_start_date).days
+            periods_to_next_pmt = elapsed_days // period if elapsed_days % period == 0 else elapsed_days // period + 1
+            self.next_payment_due_date = pp_start_date + timedelta(periods_to_next_pmt * period)
 
             # *** remaining amount
-            self.remaining_amount = reduce(lambda acc, pmt: acc - payment_amount(pmt), payments, self.amount)
+            payments = api.fetchPayments(ppid)
 
-            # *** next payment due date
-            # if debt is paid off
-            #   None
-            # if debt is not paid off
-            #   no payments   : next pmt date = plan start date
-            #   has payments  : next pmt date = last pmt date + frequency-to-days
-            if self.remaining_amount > 0:
+            if len(payments) == 0:
+                self.remaining_amount = self.amount
+            else:
+                self.remaining_amount = reduce(lambda acc, pmt: acc - payment_amount(pmt), payments, self.amount)
 
-                # no payments : next pmt date = plan start date
-                if len(payments) == 0:
-                    err_hdr = f"Start date for payment plan id '{self.id}'"
-                    self.next_payment_due_date = parse_date(plan['start_date'], err_hdr)
+            # debt is paid off : next payment dues is None
+            if self.remaining_amount == 0:
+                self.next_payment_due_date = None
 
-                # has payments : next pmt date = last pmt date + frequency-to-days
-                else:
-                    last_pmt_date = parse_date(max(payments, key=lambda pmt: payment_date(pmt))['date'],
-                                               f"Last payment date for payment plan id '{ppid}'")
-                    try:
-                        frequency = plan['installment_frequency']
-                        freq2days = api.cfg["Tables"]["PaymentPlans"]["FrequencyToDays"][frequency]
-                        self.next_payment_due_date = last_pmt_date + timedelta(days=freq2days)
-                    except KeyError:
-                        raise Exception(f"Payment plan id '{ppid} : unrecognized frequency '{frequency}'")
 
     # ============= DebtRecordExtra : display
     @classmethod
