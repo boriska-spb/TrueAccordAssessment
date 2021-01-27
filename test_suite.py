@@ -118,11 +118,11 @@ def test_Regression_BaseCase(capfd, impl):
     # Payment plans parametrized query
     for dbt in Debts:
         dbt_id = dbt['id']
-        pmt_plan = [pp for pp in PaymentPlans if pp['debt_id'] == dbt_id]
+        pmt_plans = [pp for pp in PaymentPlans if pp['debt_id'] == dbt_id]
         url = config['URL']['PaymentPlans'] + f"?debt_id={dbt_id}"
         responses.add(responses.GET,
                       url,
-                      body=json.dumps(pmt_plan),
+                      json=pmt_plans,
                       content_type="application/json")
 
     # Payments parametrized query
@@ -132,7 +132,7 @@ def test_Regression_BaseCase(capfd, impl):
         url = config['URL']['Payments'] + f"?payment_plan_id={pp_id}"
         responses.add(responses.GET,
                       config['URL']['Payments'],
-                      body=json.dumps(payments),
+                      json=payments,
                       content_type="application/json")
 
     # === Assertions
@@ -143,13 +143,13 @@ def test_Regression_BaseCase(capfd, impl):
         "{'amount': 12938.0, 'id': 3, 'in_payment_plan': True}, " \
         "{'amount': 9238.02, 'id': 4, 'in_payment_plan': False}]\n" \
         "[{'amount': 123.46, 'id': 0, 'in_payment_plan': True, 'remaining_amount': 20.959999999999994, " \
-        "'next_payment_due_date': datetime.datetime(2020, 11, 5, 0, 0)}, " \
+        "'next_payment_due_date': datetime.datetime(2021, 2, 1, 0, 0)}, " \
         "{'amount': 100.0, 'id': 1, 'in_payment_plan': True, 'remaining_amount': 50.0, " \
-        "'next_payment_due_date': datetime.datetime(2020, 8, 15, 0, 0)}, " \
+        "'next_payment_due_date': datetime.datetime(2021, 1, 30, 0, 0)}, " \
         "{'amount': 4920.34, 'id': 2, 'in_payment_plan': True, 'remaining_amount': 607.6700000000001, " \
-        "'next_payment_due_date': datetime.datetime(2020, 8, 22, 0, 0)}, " \
+        "'next_payment_due_date': datetime.datetime(2021, 1, 27, 0, 0)}, " \
         "{'amount': 12938.0, 'id': 3, 'in_payment_plan': True, 'remaining_amount': 9247.745000000003, " \
-        "'next_payment_due_date': datetime.datetime(2020, 8, 22, 0, 0)}, " \
+        "'next_payment_due_date': datetime.datetime(2021, 1, 30, 0, 0)}, " \
         "{'amount': 9238.02, 'id': 4, 'in_payment_plan': False, 'remaining_amount': 9238.02, " \
         "'next_payment_due_date': None}]\n"
 
@@ -157,6 +157,54 @@ def test_Regression_BaseCase(capfd, impl):
     out, err = capfd.readouterr()
     assert out == output
 
+
+@pytest.mark.parametrize("impl", ["Functional", "OOP"])
+@responses.activate
+def test_DebtIsPaidOff(capfd, impl):
+    """
+    Test Functional and OOP implementation for deb t which has been paid off
+    :param capfd: responses library passes this param to capture console output
+    """
+    # === Mock Responses
+    # Debts
+
+    # for debt 0, payments total is 102.5
+    dbt = Debts[0].copy()
+    dbt['amount'] = 102.5
+
+    responses.add(responses.GET,
+                  config['URL']['Debts'],
+                  json=[dbt],
+                  content_type="application/json")
+
+    # Payment plans parametrized query
+    dbt_id = 0
+    pmt_plans = [pp for pp in PaymentPlans if pp['debt_id'] == dbt_id]
+    url = config['URL']['PaymentPlans'] + f"?debt_id={dbt_id}"
+    responses.add(responses.GET,
+                  url,
+                  json=pmt_plans,
+                  content_type="application/json")
+
+    # Payments parametrized query
+    for pp in PaymentPlans:
+        pp_id = pp['id']
+        payments = [pmt for pmt in Payments if pmt['payment_plan_id'] == pp_id]
+        url = config['URL']['Payments'] + f"?payment_plan_id={pp_id}"
+        responses.add(responses.GET,
+                      config['URL']['Payments'],
+                      json=payments,
+                      content_type="application/json")
+
+    # === Assertions
+    output = \
+        "[{'amount': 102.5, 'id': 0, 'in_payment_plan': True}]\n" \
+        "[{'amount': 102.5, 'id': 0, 'in_payment_plan': True, 'remaining_amount': 0.0, " \
+        "'next_payment_due_date': None}]\n"
+
+    runImplementation(impl)
+    out, err = capfd.readouterr()
+    assert out == output
 
 @pytest.mark.parametrize("impl", ["Functional", "OOP"])
 @responses.activate
@@ -170,7 +218,7 @@ def test_NoData_Debts(capfd, impl):
     # Debts no param query
     responses.add(responses.GET,
                   config['URL']['Debts'],
-                  body=json.dumps([]),
+                  json=[],
                   content_type="application/json")
 
     # === Assertions
@@ -191,17 +239,17 @@ def test_NoData_PaymentPlans(capfd, impl):
     # Debts no param query
     responses.add(responses.GET,
                   config['URL']['Debts'],
-                  body=json.dumps(Debts),
+                  json=Debts,
                   content_type="application/json")
 
     # Payment plans parametrized query
     for dbt in Debts:
         dbt_id = dbt['id']
-        dbt_plan = []
+        dbt_plans = []
         url = config['URL']['PaymentPlans'] + f"?debt_id={dbt_id}"
         responses.add(responses.GET,
                       url,
-                      body=json.dumps(dbt_plan),
+                      json=dbt_plans,
                       content_type="application/json")
 
     # === Assertions
@@ -238,17 +286,17 @@ def test_NoData_Payments(capfd, impl):
     # Debts no param query
     responses.add(responses.GET,
                   config['URL']['Debts'],
-                  body=json.dumps(Debts),
+                  json=Debts,
                   content_type="application/json")
 
     # Payment plans parametrized query
     for dbt in Debts:
         dbt_id = dbt['id']
-        dbt_plan = [pp for pp in PaymentPlans if pp['debt_id'] == dbt_id]
+        dbt_plans = [pp for pp in PaymentPlans if pp['debt_id'] == dbt_id]
         url = config['URL']['PaymentPlans'] + f"?debt_id={dbt_id}"
         responses.add(responses.GET,
                       url,
-                      body=json.dumps(dbt_plan),
+                      json=dbt_plans,
                       content_type="application/json")
 
     # Payments parametrized query
@@ -258,7 +306,7 @@ def test_NoData_Payments(capfd, impl):
         url = config['URL']['Payments'] + f"?payment_plan_id={pp_id}"
         responses.add(responses.GET,
                       config['URL']['Payments'],
-                      body=json.dumps(payments),
+                      json=payments,
                       content_type="application/json")
 
     # === Assertions
@@ -270,13 +318,13 @@ def test_NoData_Payments(capfd, impl):
         "{'amount': 12938.0, 'id': 3, 'in_payment_plan': True}, " \
         "{'amount': 9238.02, 'id': 4, 'in_payment_plan': False}]\n" \
         "[{'amount': 123.46, 'id': 0, 'in_payment_plan': True, 'remaining_amount': 123.46, " \
-        "'next_payment_due_date': datetime.datetime(2020, 9, 28, 0, 0)}, " \
+        "'next_payment_due_date': datetime.datetime(2021, 2, 1, 0, 0)}, " \
         "{'amount': 100.0, 'id': 1, 'in_payment_plan': True, 'remaining_amount': 100.0, " \
-        "'next_payment_due_date': datetime.datetime(2020, 8, 1, 0, 0)}, " \
+        "'next_payment_due_date': datetime.datetime(2021, 1, 30, 0, 0)}, " \
         "{'amount': 4920.34, 'id': 2, 'in_payment_plan': True, 'remaining_amount': 4920.34, " \
-        "'next_payment_due_date': datetime.datetime(2020, 1, 1, 0, 0)}, " \
+        "'next_payment_due_date': datetime.datetime(2021, 1, 27, 0, 0)}, " \
         "{'amount': 12938.0, 'id': 3, 'in_payment_plan': True, 'remaining_amount': 12938.0, " \
-        "'next_payment_due_date': datetime.datetime(2020, 8, 1, 0, 0)}, " \
+        "'next_payment_due_date': datetime.datetime(2021, 1, 30, 0, 0)}, " \
         "{'amount': 9238.02, 'id': 4, 'in_payment_plan': False, 'remaining_amount': 9238.02, " \
         "'next_payment_due_date': None}]\n"
 
@@ -297,7 +345,7 @@ def test_InvalidDebtAmount(capfd, impl):
     debt = {"amount": None, "id": 0}
     responses.add(responses.GET,
                   config['URL']['Debts'],
-                  body=json.dumps([debt]),
+                  json=[debt],
                   content_type="application/json")
 
     # === Assertions
@@ -319,7 +367,7 @@ def test_MultipleDebtIds_OOP(capfd):
     url = config['URL']['PaymentPlans'] + f"?id={0}"
     responses.add(responses.GET,
                   config['URL']['Debts'],
-                  body=json.dumps([Debts[0], Debts[0]]),
+                  json=[Debts[0], Debts[0]],
                   content_type="application/json")
 
     # === Assertions
@@ -339,7 +387,7 @@ def test_MultiplePaymentPlans(capfd, impl):
     # Debts : return first debt record
     responses.add(responses.GET,
                   config['URL']['Debts'],
-                  body=json.dumps([Debts[0]]),
+                  json=[Debts[0]],
                   content_type="application/json")
 
     # Payment plans parametrized query
@@ -349,7 +397,7 @@ def test_MultiplePaymentPlans(capfd, impl):
     url = config['URL']['PaymentPlans'] + f"?debt_id={dbt_id}"
     responses.add(responses.GET,
                   url,
-                  body=json.dumps(multiple_pmt_plans),
+                  json=multiple_pmt_plans,
                   content_type="application/json")
 
     # === Assertions
@@ -372,7 +420,7 @@ def test_InvalidPaymentPlanStartDate(capfd, impl):
     # Debts : return first debt record
     responses.add(responses.GET,
                   config['URL']['Debts'],
-                  body=json.dumps([Debts[0]]),
+                  json=[Debts[0]],
                   content_type="application/json")
 
     # Payment plans parametrized query
@@ -383,7 +431,7 @@ def test_InvalidPaymentPlanStartDate(capfd, impl):
     url = config['URL']['PaymentPlans'] + f"?debt_id={dbt_id}"
     responses.add(responses.GET,
                   url,
-                  body=json.dumps([pmt_plan]),
+                  json=[pmt_plan],
                   content_type="application/json")
 
     # Payments parametrized query : no payments
@@ -392,7 +440,7 @@ def test_InvalidPaymentPlanStartDate(capfd, impl):
     url = config['URL']['Payments'] + f"?payment_plan_id={pp_id}"
     responses.add(responses.GET,
                   config['URL']['Payments'],
-                  body=json.dumps(payments),
+                  json=payments,
                   content_type="application/json")
 
     # === Assertions
@@ -417,7 +465,7 @@ def test_InvalidPaymentPlanInstallmentFrequency(capfd, impl):
     debt = Debts[0]
     responses.add(responses.GET,
                   config['URL']['Debts'],
-                  body=json.dumps([debt]),
+                  json=[debt],
                   content_type="application/json")
 
     # Payment plans parametrized query
@@ -427,7 +475,7 @@ def test_InvalidPaymentPlanInstallmentFrequency(capfd, impl):
     url = config['URL']['PaymentPlans'] + f"?debt_id={dbt_id}"
     responses.add(responses.GET,
                   url,
-                  body=json.dumps([pmt_plan]),
+                  json=[pmt_plan],
                   content_type="application/json")
 
     # Payments parametrized query
@@ -437,7 +485,7 @@ def test_InvalidPaymentPlanInstallmentFrequency(capfd, impl):
         url = config['URL']['Payments'] + f"?payment_plan_id={pp_id}"
         responses.add(responses.GET,
                       config['URL']['Payments'],
-                      body=json.dumps(payments),
+                      json=payments,
                       content_type="application/json")
 
     # === Assertions
@@ -461,7 +509,7 @@ def test_InvalidPaymentAmount(capfd, impl):
     debt = Debts[0]
     responses.add(responses.GET,
                   config['URL']['Debts'],
-                  body=json.dumps([debt]),
+                  json=[debt],
                   content_type="application/json")
 
     # Payment plans parametrized query
@@ -470,7 +518,7 @@ def test_InvalidPaymentAmount(capfd, impl):
     url = config['URL']['PaymentPlans'] + f"?debt_id={dbt_id}"
     responses.add(responses.GET,
                   url,
-                  body=json.dumps([pmt_plan]),
+                  json=[pmt_plan],
                   content_type="application/json")
 
     # Payments parametrized query
@@ -481,7 +529,7 @@ def test_InvalidPaymentAmount(capfd, impl):
         url = config['URL']['Payments'] + f"?payment_plan_id={pp_id}"
         responses.add(responses.GET,
                       config['URL']['Payments'],
-                      body=json.dumps(payments),
+                      json=payments,
                       content_type="application/json")
 
     # === Assertions
@@ -492,46 +540,3 @@ def test_InvalidPaymentAmount(capfd, impl):
     out, err = capfd.readouterr()
     assert out == output
 
-
-@pytest.mark.parametrize("impl", ["Functional", "OOP"])
-@responses.activate
-def test_InvalidPaymentDate(capfd, impl):
-    """
-    Test Functional and OOP implementation for payment having invalid date
-    :param capfd: responses library passes this param to capture console output
-    """
-    # === Mock Responses
-    # Debts no param query
-    debt = Debts[0]
-    responses.add(responses.GET,
-                  config['URL']['Debts'],
-                  body=json.dumps([debt]),
-                  content_type="application/json")
-
-    # Payment plans parametrized query
-    dbt_id = debt['id']
-    pmt_plan = PaymentPlans[dbt_id]
-    url = config['URL']['PaymentPlans'] + f"?debt_id={dbt_id}"
-    responses.add(responses.GET,
-                  url,
-                  body=json.dumps([pmt_plan]),
-                  content_type="application/json")
-
-    # Payments parametrized query
-    for pp in PaymentPlans:
-        pp_id = pp['id']
-        payments = [pmt.copy() for pmt in Payments if pmt['payment_plan_id'] == pp_id]
-        payments[0]['date'] = None
-        url = config['URL']['Payments'] + f"?payment_plan_id={pp_id}"
-        responses.add(responses.GET,
-                      config['URL']['Payments'],
-                      body=json.dumps(payments),
-                      content_type="application/json")
-
-    # === Assertions
-    output = "[{'amount': 123.46, 'id': 0, 'in_payment_plan': True}]\n" \
-             "***ERROR*** Invalid payment date : amount=51.25, payment_plan_id=0, date=None\n"
-
-    runImplementation(impl)
-    out, err = capfd.readouterr()
-    assert out == output
