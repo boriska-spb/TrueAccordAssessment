@@ -1,6 +1,7 @@
 import pytest
 import responses
-import json
+import datetime
+from APIAccess import *
 from DebtFunctional import runDebtFunctional
 from DebtObjectOriented import runDebtObjectOriented_LoadIds, runDebtObjectOriented_GenerateIds
 
@@ -108,6 +109,7 @@ def test_Regression_BaseCase(capfd, impl):
     Test Functional and OOP implementation for both simple and extra info with full dataset as presented in assessment
     :param capfd: responses library passes this param to capture console output
     """
+    APIAccess.Today = datetime.datetime(2021, 1, 28)
     # === Mock Responses
     # Debts no param query
     responses.add(responses.GET,
@@ -165,6 +167,7 @@ def test_DebtIsPaidOff(capfd, impl):
     Test Functional and OOP implementation for deb t which has been paid off
     :param capfd: responses library passes this param to capture console output
     """
+    APIAccess.Today = datetime.datetime(2021, 1, 28)
     # === Mock Responses
     # Debts
 

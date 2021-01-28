@@ -1,9 +1,17 @@
+import datetime
 import requests
 from functools import reduce
 
 
 class APIAccess:
     """Encapsulates queries to Debts DB"""
+
+    """ 
+    Today's date
+    Set to now for production run
+    Set to 2021-01-25 for unit test (date when test data was generated)
+    """
+    Today = datetime.datetime.now()
 
     class XDebtIdNotFound(Exception):
         """

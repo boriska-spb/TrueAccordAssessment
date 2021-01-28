@@ -165,7 +165,7 @@ class DebtRecordExtra(DebtRecord):
                 raise Exception(f"Payment plan id '{ppid} : unrecognized frequency '{frequency}'")
 
             # *** next payment due date : first date in payment schedule after or including today
-            elapsed_days = (datetime.now() - pp_start_date).days
+            elapsed_days = (APIAccess.Today - pp_start_date).days
             periods_to_next_pmt = elapsed_days // period if elapsed_days % period == 0 else elapsed_days // period + 1
             self.next_payment_due_date = pp_start_date + timedelta(periods_to_next_pmt * period)
 
