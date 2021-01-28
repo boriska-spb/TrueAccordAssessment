@@ -147,9 +147,9 @@ Configuration file in JSON format
 DEPENDENCIES
 ==============
 Solution uses following packages
-requests  : APIAccess
-responses : test_suite
-pytest    : test_suite
+requests
+responses
+pytest
 
 These packages must be installed on your system in order to run this solution
 
