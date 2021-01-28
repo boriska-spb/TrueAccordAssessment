@@ -147,7 +147,7 @@ def test_Regression_BaseCase(capfd, impl):
         "{'amount': 100.0, 'id': 1, 'in_payment_plan': True, 'remaining_amount': 50.0, " \
         "'next_payment_due_date': datetime.datetime(2021, 1, 30, 0, 0)}, " \
         "{'amount': 4920.34, 'id': 2, 'in_payment_plan': True, 'remaining_amount': 607.6700000000001, " \
-        "'next_payment_due_date': datetime.datetime(2021, 1, 27, 0, 0)}, " \
+        "'next_payment_due_date': datetime.datetime(2021, 2, 10, 0, 0)}, " \
         "{'amount': 12938.0, 'id': 3, 'in_payment_plan': True, 'remaining_amount': 9247.745000000003, " \
         "'next_payment_due_date': datetime.datetime(2021, 1, 30, 0, 0)}, " \
         "{'amount': 9238.02, 'id': 4, 'in_payment_plan': False, 'remaining_amount': 9238.02, " \
