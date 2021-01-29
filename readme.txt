@@ -250,6 +250,13 @@ ran main functions in functional and OO solution to make sure everything is in p
 
 Then I wrote this note.
 
+-------------------------
+Thursday, January 28
+After completing code for Scala solution, I realized I have to fix unit test-related bugs in Python solution as well.
+I allowed to reset today's date affecting date calculations to provide compatibility with bac-dated
+unit test data.
+
+
 HOW COULD I HAVE DONE BETTER WITH MORE TIME
 I think I used my time pretty efficiently, and it was fun. I enjoyed it.
 One thing I should have done is to create git repo and check in my changes regularly - that would have saved
@@ -262,6 +269,8 @@ This time, I would start with creating repo and checking in my code
 
 One thing I would do when developing production code - spend more time clarifying the specs.
 Email, of course, is not very efficient way, direct conversation is much better.
+
+
 
 
 
