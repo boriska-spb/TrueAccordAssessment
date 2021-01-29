@@ -95,7 +95,7 @@ def addPaymentPlanExtraInfo(api, debt_data) -> dict:
     # *** next payment due date : first date in payment schedule after or including today
     elapsed_days = (APIAccess.Today - pp_start_date).days
     periods_to_next_pmt = elapsed_days // period if elapsed_days % period == 0 else elapsed_days // period + 1
-    next_payment_due_date = pp_start_date + timedelta(periods_to_next_pmt*period)
+    next_payment_due_date = pp_start_date + timedelta(periods_to_next_pmt * period)
 
     payments = api.fetchPayments(ppid)
 
@@ -111,6 +111,11 @@ def addPaymentPlanExtraInfo(api, debt_data) -> dict:
     # -- payments made
 
     # *** remaining amount
+    payments_before_today = filter(lambda pmt: payment_date(pmt) < APIAccess.Today, payments)
+    remaining_amount = reduce(lambda acc, pmt: acc - payment_amount(pmt),
+                              payments_before_today,
+                              debt_data['amount'])
+
     remaining_amount = reduce(lambda acc, pmt: acc - payment_amount(pmt), payments, debt_data['amount'])
     if remaining_amount == 0:
         next_payment_due_date = None
