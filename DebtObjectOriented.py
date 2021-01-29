@@ -175,7 +175,10 @@ class DebtRecordExtra(DebtRecord):
             if len(payments) == 0:
                 self.remaining_amount = self.amount
             else:
-                self.remaining_amount = reduce(lambda acc, pmt: acc - payment_amount(pmt), payments, self.amount)
+                payments_before_today = filter(lambda pmt: payment_date(pmt) < APIAccess.Today, payments)
+                self.remaining_amount = reduce(lambda acc, pmt: acc - payment_amount(pmt),
+                                               payments_before_today,
+                                               self.amount)
 
             # debt is paid off : next payment dues is None
             if self.remaining_amount == 0:
