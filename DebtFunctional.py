@@ -116,7 +116,6 @@ def addPaymentPlanExtraInfo(api, debt_data) -> dict:
                               payments_before_today,
                               debt_data['amount'])
 
-    remaining_amount = reduce(lambda acc, pmt: acc - payment_amount(pmt), payments, debt_data['amount'])
     if remaining_amount == 0:
         next_payment_due_date = None
 
